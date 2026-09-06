@@ -1,0 +1,10 @@
+node_modules/
+dist/
+*.log
+
+# dev-only asset slicing scripts (reusable, but not part of the app)
+_tools/
+
+# raw uncut source art (keep the sheets in your own drive, not the repo)
+public/art/**/*_raw.png
+.DS_Store

@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+  <meta name="theme-color" content="#1a0f2e" />
+  <title>Ram Chant Journey</title>
+
+  <!-- PWA -->
+  <link rel="manifest" href="/manifest.webmanifest" />
+  <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png" />
+  <link rel="apple-touch-icon" href="/icons/icon-192.png" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Ram Chant" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <style>
+    html,body{margin:0;padding:0;background:#120a22;overflow:hidden;height:100%;width:100%}
+    /* portrait play column, centered on wide screens with devotional side-framing */
+    #frame{
+      position:fixed;inset:0;display:flex;align-items:center;justify-content:center;
+      background:
+        radial-gradient(ellipse at 50% 0%, #2a1a4a 0%, #160c2b 55%, #0d0719 100%);
+    }
+    #game{
+      width:100%;max-width:480px;height:100%;max-height:100vh;aspect-ratio:9/16;
+      box-shadow:0 0 60px rgba(226,134,31,.25);
+    }
+    canvas{display:block;border-radius:0}
+    @media(min-width:520px){ #game{border-radius:18px;overflow:hidden;height:min(96vh,900px)} }
+
+    /* PWA install button (DOM overlay, above the canvas) */
+    #installBtn{
+      position:fixed;top:calc(env(safe-area-inset-top,0px) + 12px);right:12px;z-index:20;
+      display:none;align-items:center;gap:6px;
+      font:600 14px/1 system-ui,sans-serif;color:#160c2b;background:#f1c40f;
+      border:none;border-radius:999px;padding:9px 14px;cursor:pointer;
+      box-shadow:0 3px 12px rgba(0,0,0,.35);
+    }
+    #installBtn:active{transform:scale(.96)}
+    /* iOS "add to home screen" hint bubble */
+    #iosHint{
+      position:fixed;left:12px;right:12px;bottom:calc(env(safe-area-inset-bottom,0px) + 12px);
+      z-index:20;display:none;
+      font:500 13px/1.4 system-ui,sans-serif;color:#fff3dd;background:rgba(22,12,43,.94);
+      border:1px solid rgba(241,196,15,.5);border-radius:14px;padding:12px 14px;text-align:center;
+    }
+    #iosHint b{color:#f1c40f}
+    #iosHint .x{position:absolute;top:6px;right:10px;color:#ffd9a0;cursor:pointer;font-size:16px}
+  </style>
+</head>
+<body>
+  <div id="frame"><div id="game"></div></div>
+
+  <!-- PWA install affordances -->
+  <button id="installBtn">📲 Install</button>
+  <div id="iosHint">
+    <span class="x" id="iosHintClose">✕</span>
+    Install this game: tap <b>Share</b> ⬆️, then <b>“Add to Home Screen”</b>.
+  </div>
+
+  <script type="module" src="/src/main.js"></script>
+  <script>
+    // Register the service worker for offline PWA support (production only).
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js').catch(() => { /* offline features optional */ });
+      });
+    }
+
+    // --- Install button (Add to Home Screen) ---
+    (function () {
+      const btn = document.getElementById('installBtn');
+      const iosHint = document.getElementById('iosHint');
+      const iosClose = document.getElementById('iosHintClose');
+
+      // already installed / launched as an app? show nothing.
+      const isStandalone = window.matchMedia('(display-mode: standalone)').matches
+        || window.navigator.standalone === true;
+      if (isStandalone) return;
+
+      let deferred = null;
+      // Chrome/Edge/Android: capture the prompt, reveal our own button
+      window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault();
+        deferred = e;
+        btn.style.display = 'inline-flex';
+      });
+
+      btn.addEventListener('click', async () => {
+        if (!deferred) return;
+        deferred.prompt();
+        try { await deferred.userChoice; } catch {}
+        deferred = null;
+        btn.style.display = 'none';
+      });
+
+      window.addEventListener('appinstalled', () => {
+        btn.style.display = 'none';
+        if (iosHint) iosHint.style.display = 'none';
+      });
+
+      // iOS Safari has no beforeinstallprompt — show a manual hint once
+      const ua = window.navigator.userAgent;
+      const isIOS = /iphone|ipad|ipod/i.test(ua);
+      const isSafari = /safari/i.test(ua) && !/crios|fxios|edgios/i.test(ua);
+      if (isIOS && isSafari && !localStorage.getItem('rcj_ios_hint_dismissed')) {
+        setTimeout(() => { iosHint.style.display = 'block'; }, 2500);
+      }
+      if (iosClose) iosClose.addEventListener('click', () => {
+        iosHint.style.display = 'none';
+        try { localStorage.setItem('rcj_ios_hint_dismissed', '1'); } catch {}
+      });
+    })();
+  </script>
+</body>
+</html>

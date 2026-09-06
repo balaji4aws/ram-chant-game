@@ -1,0 +1,12 @@
+# build output & deps
+game/node_modules/
+game/dist/
+*.log
+
+# dev-only asset slicing scripts
+game/_tools/
+
+# raw source art & heavy audio masters (keep in your own drive, not git)
+assets-source/audio/
+public/art/**/*_raw.png
+.DS_Store
