@@ -68,8 +68,16 @@ export class WordChant {
       }
     };
     r.onerror = (ev) => {
-      this.onStatus('error:' + ev.error);
-      // 'no-speech'/'aborted'/'network' are recoverable — let onend restart us
+      // Web Speech fires 'aborted'/'no-speech'/'network' routinely during the
+      // continuous listen loop — these are recoverable and onend restarts us,
+      // so DON'T alarm the user. Only surface a genuine, actionable failure.
+      const benign = (ev.error === 'aborted' || ev.error === 'no-speech' || ev.error === 'network');
+      if (benign) return; // stay quiet; auto-restart handles it
+      if (ev.error === 'not-allowed' || ev.error === 'service-not-allowed') {
+        this.onStatus('mic-blocked');
+      } else {
+        this.onStatus('error:' + ev.error);
+      }
     };
     r.onend = () => {
       this._starting = false;
