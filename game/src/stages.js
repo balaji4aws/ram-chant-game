@@ -22,6 +22,9 @@ export const STAGES = [
   {
     id: 1,
     title: 'The Great Leap',
+    emoji: '🌺',
+    themeTitle: 'Start with Rāma',
+    subtitle: 'Hanumān Begins by Remembering Rāma.',
     purpose: 'Learn the chant — Hanuman grows mighty and leaps across the ocean.',
     theme: 'Dawn sky over a vast ocean; the hero rising, mountains falling away below.',
     verse: '7.1–7.2',
@@ -32,6 +35,9 @@ export const STAGES = [
   {
     id: 2,
     title: 'Mount of Gold',
+    emoji: '🎯',
+    themeTitle: 'Stay on Your Mission',
+    subtitle: 'Hanumān Cannot Be Distracted from His Mission.',
     purpose: 'A golden mountain rises to offer rest — bow, and fly on.',
     theme: 'Radiant gold peak (Mainaka) breaking the sea; glittering light.',
     verse: '7.3–7.4',
@@ -42,6 +48,9 @@ export const STAGES = [
   {
     id: 3,
     title: "Surasa's Gate",
+    emoji: '💪🏼',
+    themeTitle: 'Use Strength Wisely',
+    subtitle: 'Hanumān Knows When to Become Huge — and When to Become Small.',
     purpose: 'A giant mouth blocks the way — turn tiny and slip through.',
     theme: 'A vast cavern-mouth; the hero shrinks to a spark of light and passes.',
     verse: '7.5–7.6',
@@ -52,6 +61,9 @@ export const STAGES = [
   {
     id: 4,
     title: "Simhika's Shadow",
+    emoji: '💍',
+    themeTitle: 'Carry Trust Faithfully',
+    subtitle: 'Hanumān Finds Sītā — and Becomes the Perfect Messenger.',
     purpose: 'A shadow-catcher tries to hold him — steady chanting breaks free.',
     theme: 'A dark grasping shadow over moonlit sea vs. the hero’s radiance.',
     verse: '7.7–7.8',
@@ -62,6 +74,9 @@ export const STAGES = [
   {
     id: 5,
     title: 'Finding Sita',
+    emoji: '🦁',
+    themeTitle: 'Think Beyond the Task',
+    subtitle: 'Hanumān Decides to Show Laṅkā Who He Is.',
     purpose: 'Search the moonlit garden of Lanka and find Mother Sita.',
     theme: 'Quiet night Ashoka grove; lanterns, the Simsupa tree, gentle search.',
     verse: '7.9–7.13',
@@ -72,6 +87,9 @@ export const STAGES = [
   {
     id: 6,
     title: 'The Garden Guardians',
+    emoji: '🔥',
+    themeTitle: 'Find the Opportunity',
+    subtitle: 'Hanumān Turns Even Capture into an Opportunity.',
     purpose: 'Clear the way, calm and unstoppable — guardians turn to light.',
     theme: 'Bursts of light dissolving obstacles into golden dust (non-violent).',
     verse: '7.16–7.35',
@@ -82,6 +100,9 @@ export const STAGES = [
   {
     id: 7,
     title: 'Fire & the Journey Home',
+    emoji: '🙏',
+    themeTitle: 'Serve Without Pride',
+    subtitle: "Hanumān's Greatness Ends in Service — and Rāma's Grace.",
     purpose: 'A blessing of light fills the sky — fly home to Rama’s embrace.',
     theme: 'Warm golden fire-light (never scary), triumphant return, a loving embrace.',
     verse: '7.42–7.50',

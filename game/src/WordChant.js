@@ -1,25 +1,44 @@
-// WordChant — REAL "Ram" WORD detection via the browser Web Speech API.
-// Core rule (Stage-1 basics): hearing "ram"/"rama"/"raam" => one chant (+1, Hanuman
-// takes one climb step). ANY OTHER word => ignored (Hanuman does NOT move).
-// No rhythm, no energy — pure word gate. Chrome/Edge + Safari (webkit-prefixed).
+// WordChant — kid-friendly "Rāma" chant detection via the browser Web Speech API.
+//
+// WHY THIS IS FUZZY: English-tuned engines mis-hear a chanted "Ram/Rama" as
+// acoustic COUSINS — "wrong", "run", "rum", "rome", "rang", "rahm", "drum", "brahm",
+// "om", "one", "ma"… A strict token list rejects a child who IS chanting correctly.
+// So we match on phonetic SHAPE (the "r/w + open-vowel + m/n/ng" family) plus a
+// list of known mishearings. Per the game's ethic: be GENEROUS — accept an earnest
+// attempt, never reject a real chant. Better a rare false-accept than a frustrated kid.
 //
 // Contract used by the scene:
 //   start()                 -> begins continuous recognition
-//   onWord(word)            -> callback fired with a matched "ram" token
+//   onWord(word)            -> fired once per detected chant
+//   onStatus(state)         -> 'listening' | 'stopped' | 'mic-blocked' | 'unsupported' | 'error:*'
+//   onHeard(text)           -> the raw transcript (for on-screen feedback)
 //   supported (static)      -> is SpeechRecognition available?
-//
-// Notes: Web Speech is chunky (fires on interim/final results). We scan the latest
-// transcript for NEW "ram" tokens since the last result and fire onWord per new token.
 
-const RAM_WORDS = ['ram', 'rama', 'raam', 'raama', 'raam raam', 'ram ram', 'raum', 'rum'];
-// (kept liberal on close phonetic hits so a child isn't rejected; tune later)
+// Known direct mis-hearings of a chanted "Rām/Rāma" (lowercased, exact token match).
+const RAM_EXACT = new Set([
+  'ram','rama','raam','raama','ram','raum','rum','rom','rome','rahm','raham',
+  'ramu','ramaa','raama','ramram','ramarama','brahm','bram','drum','rang','ranga',
+  'wrong','run','rung','rum','ram','rahm','om','aum','ohm','one','ma','maa','arm','harm',
+]);
 
+// Phonetic-shape test: a short token that SOUNDS like "Ram" —
+// starts with r (or w, for the "wrong" mishearing), has an open vowel, ~<=6 chars.
+function soundsLikeRam(w) {
+  if (!w || w.length > 7) return false;
+  if (RAM_EXACT.has(w)) return true;
+  // r-a/o/u-(m/n/ng) family: ra, ram, raam, rom, run, rang, rahm, rum...
+  if (/^r[aou]+[mn]?g?$/.test(w)) return true;      // r + open vowel + optional m/n/ng
+  if (/^r[aou]+ma?$/.test(w)) return true;          // rama / raama / roma
+  if (/^wr[ao]/.test(w)) return true;               // "wrong"/"wram" mishearing
+  return false;
+}
+
+// Count how many chant-hits are in a transcript (generous, shape-based).
 function countRam(text) {
   const t = (text || '').toLowerCase();
-  // count occurrences of ram-family tokens
-  let n = 0;
   const words = t.split(/[^a-z]+/).filter(Boolean);
-  for (const w of words) if (RAM_WORDS.includes(w)) n++;
+  let n = 0;
+  for (const w of words) if (soundsLikeRam(w)) n++;
   return n;
 }
 
@@ -28,9 +47,10 @@ export class WordChant {
     return !!(window.SpeechRecognition || window.webkitSpeechRecognition);
   }
 
-  constructor(onWord, onStatus) {
+  constructor(onWord, onStatus, onHeard) {
     this.onWord = onWord;
     this.onStatus = onStatus || (() => {});
+    this.onHeard = onHeard || (() => {});
     this.running = false;
     this._lastFinalCount = 0;
     this._interimCount = 0;
@@ -43,28 +63,37 @@ export class WordChant {
     this.rec = r;
     r.continuous = true;
     r.interimResults = true;
-    r.lang = 'en-IN'; // Indian English tends to map "Ram" better; falls back fine
-    r.maxAlternatives = 1;
+    r.lang = 'en-IN'; // Indian English maps "Ram" a bit better; still falls back fine
+    r.maxAlternatives = 6; // see MORE candidate interpretations => more chances to match
 
     r.onresult = (e) => {
       let finalText = '', interimText = '';
+      let finalHits = 0, interimHits = 0;
       for (let i = e.resultIndex; i < e.results.length; i++) {
         const res = e.results[i];
-        if (res.isFinal) finalText += res[0].transcript + ' ';
-        else interimText += res[0].transcript + ' ';
+        // scan EVERY alternative; take the MOST hits any alternative gives us.
+        // (the top guess may be "wrong wrong" while alt #3 is "ram ram" — accept it)
+        let best = 0, bestText = res[0].transcript;
+        for (let a = 0; a < res.length; a++) {
+          const alt = res[a].transcript;
+          const h = countRam(alt);
+          if (h > best) { best = h; bestText = alt; }
+        }
+        if (res.isFinal) { finalText += bestText + ' '; finalHits += best; }
+        else { interimText += bestText + ' '; interimHits = Math.max(interimHits, best); }
       }
-      // fire on new "ram" tokens as they appear in interim, dedup against final
-      if (interimText) {
-        const c = countRam(interimText);
-        if (c > this._interimCount) { for (let k = this._interimCount; k < c; k++) this.onWord('ram'); this._interimCount = c; }
+      // show what was heard (raw top guess is fine for feedback)
+      const heard = (interimText || finalText).trim();
+      if (heard) this.onHeard(heard);
+      // fire on NEW hits seen in interim; dedup against what we already credited
+      if (interimHits > this._interimCount) {
+        for (let k = this._interimCount; k < interimHits; k++) this.onWord('ram');
+        this._interimCount = interimHits;
       }
-      if (finalText) {
-        // final resets the interim window
-        const c = countRam(finalText);
-        // any final ram tokens not already counted via interim: emit remainder
+      if (finalHits) {
         const already = this._interimCount;
-        for (let k = already; k < c; k++) this.onWord('ram');
-        this._interimCount = 0;
+        for (let k = already; k < finalHits; k++) this.onWord('ram');
+        this._interimCount = 0; // final closes the window
       }
     };
     r.onerror = (ev) => {
@@ -109,5 +138,5 @@ export class WordChant {
     }
   }
 
-  stop() { this.running = false; if (this.rec) { try { this.rec.stop(); } catch {} } }
+  stop() { this.running = false; if (this.rec) { try { this.rec.stop(); } catch {} } this.onStatus('stopped'); }
 }

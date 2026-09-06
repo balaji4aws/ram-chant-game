@@ -6,13 +6,23 @@
   <meta name="theme-color" content="#1a0f2e" />
   <title>Ram Chant Journey</title>
 
-  <!-- Playful rounded kids' font -->
+  <!-- App font: Amazon Ember first (renders on Amazon devices / your machine, where
+       the licensed brand font is installed), with a friendly free fallback elsewhere.
+       Ember is proprietary so we do NOT bundle it into a public build. -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&display=swap" rel="stylesheet" />
+  <style>
+    :root{
+      /* Amazon Ember when available; Baloo 2 keeps the warm rounded kids' feel otherwise */
+      --app-font: "Amazon Ember","AmazonEmber","Ember","Baloo 2",system-ui,-apple-system,sans-serif;
+    }
+    body,button,input{ font-family: var(--app-font); }
+  </style>
 
   <!-- PWA -->
   <link rel="manifest" href="/manifest.webmanifest" />
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon.png" />
   <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png" />
   <link rel="apple-touch-icon" href="/icons/icon-192.png" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
