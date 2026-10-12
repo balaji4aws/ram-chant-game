@@ -3,6 +3,10 @@
 // NOTE: narrative/teachings are a study-grade paraphrase; to be SWAPPED for an
 // achari/pandit-reviewed version later. See knowledge/sundarakanda_mbtn_ch7_source.md.
 
+// App font — a single Ember-like stack used everywhere (Nunito Sans is a free,
+// ship-anywhere match for Amazon Ember; if a device HAS Ember it's used first).
+export const FONT = '"Amazon Ember","Nunito Sans",system-ui,-apple-system,sans-serif';
+
 export const PALETTE = {
   saffron: 0xe2861f,
   deepRed: 0xc0392b,

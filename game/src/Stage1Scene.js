@@ -14,7 +14,7 @@
 import { Hanuman } from './Hanuman.js';
 import { WordChant } from './WordChant.js';
 import { Fx } from './Fx.js';
-import { STAGES, PALETTE } from './stages.js';
+import { STAGES, PALETTE, FONT } from './stages.js';
 
 const TARGET = 11;
 const ART = 'art/stage1/';
@@ -131,7 +131,7 @@ export class Stage1Scene extends Phaser.Scene {
     }
 
     // Modern kids' UI: rounded playful font, soft floating pills, NO hard boxes.
-    const KID_FONT = '"Amazon Ember","AmazonEmber","Ember","Baloo 2","Fredoka",system-ui,sans-serif';
+    const KID_FONT = FONT;
 
     // --- STAGE TITLE (top) — floating soft pill, no border box ---
     this._titlePill = this.add.graphics().setDepth(49);
@@ -236,7 +236,6 @@ export class Stage1Scene extends Phaser.Scene {
     this._auraTarget = 0.45; // visible glow floor from the start
     // gentle encouragement when the child goes quiet (warm invite, never a scold)
     this._playing = false;      // true once listening has started
-    this._DEBUG_HEARD = true;   // TEMP: show raw transcript while we tune the recognizer
     this._quietFor = 0;         // seconds since the last "Ram" while playing
     this._nudgeShown = false;   // one nudge per quiet spell
     this._encouragements = [
@@ -310,19 +309,24 @@ export class Stage1Scene extends Phaser.Scene {
         }
       },
       // onHeard: show what the mic actually picked up (proves recognition is alive)
-      // Child-friendly feedback: never show the raw mishearing (e.g. "wrong wrong")
-      // to a kid — that's discouraging and it's the ENGINE's error, not theirs.
-      // A matched chant lights up positive feedback in _onRam instead. Set DEBUG_HEARD
-      // = true only when WE are tuning the recognizer.
-      (heard) => { if (this._DEBUG_HEARD) this.status.setText('heard: “' + heard + '”'); }
+      // While LISTENING (button green), show what the mic hears so the child + parent
+      // can SEE the game is recognizing their voice. A matched chant flashes "Rāma! 🙏"
+      // from _onRam (fires right after). We keep it warm — show the heard words plainly.
+      (heard) => {
+        if (!this._listening) return;
+        // don't stomp a fresh "Rāma! 🙏" match — let it linger ~700ms
+        if (this._ramHoldUntil && performance.now() < this._ramHoldUntil) return;
+        this.status.setText('👂 heard: “' + heard + '”');
+      }
     );
     this.word.start();
   }
 
   _onRam() {
     if (this.done) return;
-    // warm, affirming feedback on every accepted chant
+    // warm, affirming feedback on every accepted chant (lingers over heard-text)
     this.status.setText('Rāma! 🙏');
+    this._ramHoldUntil = performance.now() + 700;
     this.count++;
     this.counter.setText(`${this.count} / ${TARGET}`);
     this.mudra.setText(`${this.count}`);
@@ -380,7 +384,7 @@ export class Stage1Scene extends Phaser.Scene {
     const x = this._heroX(), y = this._heroY() - this.heroH * 0.85;
     const msg = Phaser.Utils.Array.GetRandom(this._encouragements);
     const t = this.add.text(x, y, msg, {
-      fontFamily: '"Amazon Ember","AmazonEmber","Ember","Baloo 2","Fredoka",system-ui,sans-serif', fontSize: '15px',
+      fontFamily: FONT, fontSize: '15px',
       color: '#fff6df', fontStyle: 'bold', align: 'center', wordWrap: { width: W - 120 },
     }).setOrigin(0.5).setDepth(45).setAlpha(0).setShadow(0, 2, '#2a1a4a', 6, false, true);
     const pad = 12;
@@ -440,15 +444,15 @@ export class Stage1Scene extends Phaser.Scene {
 
     // ---- HEADER (top): celebration + stage-complete + aggregated japa count ----
     this.add.text(W / 2, 46, 'Jai Shri Ram! 🙏', {
-      fontFamily: '"Amazon Ember","AmazonEmber","Ember","Baloo 2",system-ui,serif', fontSize: '26px', color: '#f1c40f', fontStyle: 'bold',
+      fontFamily: FONT, fontSize: '26px', color: '#f1c40f', fontStyle: 'bold',
       stroke: '#160c2b', strokeThickness: 5,
     }).setOrigin(0.5).setDepth(31);
     this.add.text(W / 2, 78, `Stage ${this.stage.id} completed`, {
-      fontFamily: '"Amazon Ember","AmazonEmber","Ember","Baloo 2",system-ui,serif', fontSize: '18px', color: '#fff3dd', fontStyle: 'bold',
+      fontFamily: FONT, fontSize: '18px', color: '#fff3dd', fontStyle: 'bold',
       stroke: '#160c2b', strokeThickness: 4,
     }).setOrigin(0.5).setDepth(31);
     this.add.text(W / 2, 104, `Japa count: ${totalJapa}`, {
-      fontFamily: '"Amazon Ember","AmazonEmber","Ember","Baloo 2",system-ui,sans-serif', fontSize: '15px', color: '#ffd98a', fontStyle: 'bold',
+      fontFamily: FONT, fontSize: '15px', color: '#ffd98a', fontStyle: 'bold',
       stroke: '#160c2b', strokeThickness: 4,
     }).setOrigin(0.5).setDepth(31);
 
@@ -462,24 +466,32 @@ export class Stage1Scene extends Phaser.Scene {
     } else {
       this.add.rectangle(W / 2, H / 2, W - 40, 170, 0x160c2b, 0.94).setDepth(30).setStrokeStyle(2, PALETTE.gold, 0.8);
       this.add.text(W / 2, H / 2, this.stage.subtitle, {
-        fontFamily: 'system-ui', fontSize: '15px', color: '#fff3dd', align: 'center', wordWrap: { width: W - 80 },
+        fontFamily: FONT, fontSize: '15px', color: '#fff3dd', align: 'center', wordWrap: { width: W - 80 },
       }).setOrigin(0.5).setDepth(31);
     }
 
-    // ---- NEXT button (bottom): advance to the next stage ----
+    // ---- NEXT button (bottom): advance to the next stage — SOFT ROUNDED PILL ----
     const isLast = this.stage.id >= STAGES.length;
     const nextLabel = isLast ? '🏁 Journey complete' : `➡️ Move to Stage ${this.stage.id + 1}`;
-    const nextBtn = this.add.text(W / 2, H - 60, nextLabel, {
-      fontFamily: '"Amazon Ember","AmazonEmber","Ember","Baloo 2",system-ui,sans-serif', fontSize: '18px', color: '#160c2b',
-      backgroundColor: '#f1c40f', padding: { x: 22, y: 11 }, fontStyle: 'bold',
+    const nbY = H - 60, nbW = 300, nbH = 56;
+    const nextG = this.add.graphics().setDepth(31);
+    this._roundRect(nextG, W / 2 - nbW / 2, nbY - nbH / 2 + 4, nbW, nbH, 26, 0x000000, 0.18); // soft shadow
+    this._roundRect(nextG, W / 2 - nbW / 2, nbY - nbH / 2, nbW, nbH, 26, 0xffc433, 1);          // gold pill
+    const nextBtn = this.add.text(W / 2, nbY, nextLabel, {
+      fontFamily: FONT, fontSize: '18px', color: '#160c2b', fontStyle: 'bold',
     }).setOrigin(0.5).setDepth(32).setInteractive({ useHandCursor: true });
-    nextBtn.setAlpha(0);
-    this.tweens.add({ targets: nextBtn, alpha: 1, delay: 700, duration: 400 });
-    nextBtn.on('pointerdown', () => {
+    // make the whole pill tappable, not just the glyphs
+    const nextHit = this.add.rectangle(W / 2, nbY, nbW, nbH, 0x000000, 0.001)
+      .setDepth(32).setInteractive({ useHandCursor: true });
+    nextG.setAlpha(0); nextBtn.setAlpha(0);
+    this.tweens.add({ targets: [nextG, nextBtn], alpha: 1, delay: 700, duration: 400 });
+    const goNext = () => {
       // Stage 2+ scenes not built yet → restart Stage 1 for now (real routing later).
       // The intent (advance) is correct; wiring the next scene is the next milestone.
       this.scene.restart();
-    });
+    };
+    nextBtn.on('pointerdown', goNext);
+    nextHit.on('pointerdown', goNext);
   }
 
   update(time, delta) {
